@@ -134,7 +134,8 @@ public class RequestHandler {
     }
 
     String localTimelineHash = localTimeline.getTimelineHash();
-    if (!localTimelineHash.equals(timelineHashFromClient)) {
+    if (!localTimelineHash.equals(timelineHashFromClient)
+        && !localTimeline.containsOrBeforeTimelineStarts(lastKnownInstantFromClient)) {
       return true;
     }
 
