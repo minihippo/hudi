@@ -30,8 +30,6 @@ import org.apache.hudi.common.util.ParquetReaderIterator;
 import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.avro.AvroReadSupport;
 import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.util.HadoopInputFile;
-import org.apache.parquet.io.InputFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -69,6 +67,7 @@ public class HoodieAvroParquetReader implements HoodieAvroFileReader {
   @Override
   public ClosableIterator<IndexedRecord> getIndexedRecordIterator(Schema schema) throws IOException {
     AvroReadSupport.setAvroReadSchema(conf, schema);
+    AvroReadSupport.setRequestedProjection(conf, schema);
     ParquetReader<IndexedRecord> reader = AvroParquetReader.<IndexedRecord>builder(path).withConf(conf).build();
     ParquetReaderIterator<IndexedRecord> parquetReaderIterator = new ParquetReaderIterator<>(reader);
     readerIterators.add(parquetReaderIterator);
