@@ -467,7 +467,7 @@ public class HoodieTimelineArchiver<T extends HoodieAvroPayload, I, K, O> {
 
   private Stream<HoodieInstant> getInstantsToArchive() {
     Stream<HoodieInstant> instants = Stream.concat(getCleanInstantsToArchive(), getCommitInstantsToArchive());
-    if (config.isMetastoreEnabled()) {
+    if (config.isMetaserverEnabled()) {
       return Stream.empty();
     }
 
