@@ -91,6 +91,5 @@ jobs:
           mvn test -Punit-tests -D"$SCALA_PROFILE" -D"$SPARK_PROFILE" -D"$FLINK_PROFILE" '-Dtest=Test*' -pl hudi-spark-datasource/hudi-spark $MVN_ARGS
       - name: Platform Service Build and Test
         run:
-          sh hudi-platform-service/hudi-metaserver/bin/compile_thrift_by_docker.sh &&
           mvn install -pl :hudi-metaserver -DskipTests=true -Phudi-platform-service &&
           mvn test -Phudi-platform-service -pl :hudi-metaserver
