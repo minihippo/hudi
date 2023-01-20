@@ -56,7 +56,7 @@ public class HoodieTableMetaserverClient extends HoodieTableMetaClient {
   private final String databaseName;
   private final String tableName;
   private final Table table;
-  private final HoodieMetaserverClient metaserverClient;
+  private transient final HoodieMetaserverClient metaserverClient;
 
   public HoodieTableMetaserverClient(Configuration conf, ConsistencyGuardConfig consistencyGuardConfig,
                                      String mergerStrategy, FileSystemRetryConfig fileSystemRetryConfig,
