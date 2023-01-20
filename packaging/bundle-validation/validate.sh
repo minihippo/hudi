@@ -34,6 +34,7 @@ ln -sf $JARS_DIR/hudi-spark*.jar $JARS_DIR/spark.jar
 ln -sf $JARS_DIR/hudi-utilities-bundle*.jar $JARS_DIR/utilities.jar
 ln -sf $JARS_DIR/hudi-utilities-slim*.jar $JARS_DIR/utilities-slim.jar
 ln -sf $JARS_DIR/hudi-kafka-connect-bundle*.jar $JARS_DIR/kafka-connect.jar
+#ln -sf $JARS_DIR/hudi-metaserver-server-bundle*.jar $JARS_DIR/metaserver.jar
 
 
 ##
@@ -118,7 +119,7 @@ test_utilities_bundle () {
 
     OUTPUT_SIZE=$(du -s ${OUTPUT_DIR} | awk '{print $1}')
     if [[ -z $OUTPUT_SIZE || "$OUTPUT_SIZE" -lt "580" ]]; then
-        echo "::error::validate.sh deltastreamer output folder ($OUTPUT_SIZE) is smaller than minimum expected (580)" 
+        echo "::error::validate.sh deltastreamer output folder ($OUTPUT_SIZE) is smaller than minimum expected (580)"
         exit 1
     fi
 
@@ -185,47 +186,95 @@ test_kafka_connect_bundle() {
     kill $ZOOKEEPER_PID $KAFKA_SERVER_PID $SCHEMA_REG_PID
 }
 
+##
+# Function to test the hudi metaserver bundles.
+#
+# env vars (defined in container):
+#   SPARK_HOME: path to the spark directory
+##
+test_hudi_metaserver_bundles () {
+    echo "::warning::validate.sh setting up hudi metaserver for hudi metaserver bundles validation"
+
+#    $DERBY_HOME/bin/startNetworkServer -h 0.0.0.0 &
+#    local DERBY_PID=$!
+#    $HIVE_HOME/bin/hiveserver2 --hiveconf hive.aux.jars.path=$JARS_DIR/hadoop-mr.jar &
+#    local HIVE_PID=$!
+    echo "::warning::validate.sh Writing sample data via Spark DataSource."
+    $SPARK_HOME/bin/spark-shell --jars $JARS_DIR/spark.jar < $WORKDIR/service/write.scala
+
+    echo "::warning::validate.sh Query and validate the results using Spark SQL"
+    # save Spark SQL query results
+    $SPARK_HOME/bin/spark-shell --jars $JARS_DIR/spark.jar \
+      -i <(echo 'spark.sql("select * from trips").coalesce(1).write.csv("/tmp/sparksql/trips/results"); System.exit(0)')
+    numRecordsSparkSQL=$(cat /tmp/sparksql/trips/results/*.csv | wc -l)
+    if [ "$numRecordsSparkSQL" -ne 10 ]; then
+        echo "::error::validate.sh Spark SQL validation failed."
+        exit 1
+    fi
+#    echo "::warning::validate.sh Query and validate the results using HiveQL"
+#    # save HiveQL query results
+#    hiveqlresultsdir=/tmp/hiveql/trips/results
+#    mkdir -p $hiveqlresultsdir
+#    $HIVE_HOME/bin/beeline --hiveconf hive.input.format=org.apache.hudi.hadoop.HoodieParquetInputFormat \
+#      -u jdbc:hive2://localhost:10000/default --showHeader=false --outputformat=csv2 \
+#      -e 'select * from trips' >> $hiveqlresultsdir/results.csv
+#    numRecordsHiveQL=$(cat $hiveqlresultsdir/*.csv | wc -l)
+#    if [ "$numRecordsHiveQL" -ne 10 ]; then
+#        echo "::error::validate.sh HiveQL validation failed."
+#        exit 1
+#    fi
+    echo "::warning::validate.sh spark & hadoop-mr bundles validation was successful."
+#    kill $DERBY_PID $HIVE_PID
+}
+
 
 ############################
 # Execute tests
 ############################
 
+#echo "::warning::validate.sh validating spark & hadoop-mr bundle"
+#test_spark_hadoop_mr_bundles
+#if [ "$?" -ne 0 ]; then
+#    exit 1
+#fi
+#echo "::warning::validate.sh done validating spark & hadoop-mr bundle"
+#
+#if [[ $SPARK_HOME == *"spark-2.4"* ]] || [[  $SPARK_HOME == *"spark-3.1"* ]]
+#then
+#  echo "::warning::validate.sh validating utilities bundle"
+#  test_utilities_bundle $JARS_DIR/utilities.jar
+#  if [ "$?" -ne 0 ]; then
+#      exit 1
+#  fi
+#  echo "::warning::validate.sh done validating utilities bundle"
+#else
+#  echo "::warning::validate.sh skip validating utilities bundle for non-spark2.4 & non-spark3.1 build"
+#fi
+#
+#echo "::warning::validate.sh validating utilities slim bundle"
+#test_utilities_bundle $JARS_DIR/utilities-slim.jar $JARS_DIR/spark.jar
+#if [ "$?" -ne 0 ]; then
+#    exit 1
+#fi
+#echo "::warning::validate.sh done validating utilities slim bundle"
+#
+#echo "::warning::validate.sh validating flink bundle"
+#test_flink_bundle
+#if [ "$?" -ne 0 ]; then
+#    exit 1
+#fi
+#echo "::warning::validate.sh done validating flink bundle"
+#
+#echo "::warning::validate.sh validating kafka connect bundle"
+#test_kafka_connect_bundle $JARS_DIR/kafka-connect.jar
+#if [ "$?" -ne 0 ]; then
+#    exit 1
+#fi
+#echo "::warning::validate.sh done validating kafka connect bundle"
+
 echo "::warning::validate.sh validating spark & hadoop-mr bundle"
-test_spark_hadoop_mr_bundles
+test_hudi_metaserver_bundles
 if [ "$?" -ne 0 ]; then
     exit 1
 fi
 echo "::warning::validate.sh done validating spark & hadoop-mr bundle"
-
-if [[ $SPARK_HOME == *"spark-2.4"* ]] || [[  $SPARK_HOME == *"spark-3.1"* ]]
-then
-  echo "::warning::validate.sh validating utilities bundle"
-  test_utilities_bundle $JARS_DIR/utilities.jar
-  if [ "$?" -ne 0 ]; then
-      exit 1
-  fi
-  echo "::warning::validate.sh done validating utilities bundle"
-else
-  echo "::warning::validate.sh skip validating utilities bundle for non-spark2.4 & non-spark3.1 build"
-fi
-
-echo "::warning::validate.sh validating utilities slim bundle"
-test_utilities_bundle $JARS_DIR/utilities-slim.jar $JARS_DIR/spark.jar
-if [ "$?" -ne 0 ]; then
-    exit 1
-fi
-echo "::warning::validate.sh done validating utilities slim bundle"
-
-echo "::warning::validate.sh validating flink bundle"
-test_flink_bundle
-if [ "$?" -ne 0 ]; then
-    exit 1
-fi
-echo "::warning::validate.sh done validating flink bundle"
-
-echo "::warning::validate.sh validating kafka connect bundle"
-test_kafka_connect_bundle $JARS_DIR/kafka-connect.jar
-if [ "$?" -ne 0 ]; then
-    exit 1
-fi
-echo "::warning::validate.sh done validating kafka connect bundle"

@@ -449,6 +449,16 @@
           <artifactId>hudi-metaserver-client</artifactId>
           <version>${project.version}</version>
         </dependency>
+        <dependency>
+          <groupId>com.h2database</groupId>
+          <artifactId>h2</artifactId>
+          <version>1.4.200</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.hudi</groupId>
+          <artifactId>hudi-metaserver-server</artifactId>
+          <version>${project.version}</version>
+        </dependency>
       </dependencies>
       <build>
         <plugins>

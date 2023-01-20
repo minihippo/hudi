@@ -36,13 +36,11 @@ df.write.format("hudi").
   option(PRECOMBINE_FIELD_OPT_KEY, "ts").
   option(RECORDKEY_FIELD_OPT_KEY, "uuid").
   option(PARTITIONPATH_FIELD_OPT_KEY, "partitionpath").
-  option(TABLE_NAME, tableName).
-  option("hoodie.datasource.meta.sync.enable", "true").
-  option("hoodie.datasource.hive_sync.database", database).
-  option("hoodie.datasource.hive_sync.table", tableName).
-  option("hoodie.datasource.hive_sync.partition_extractor_class", "org.apache.hudi.hive.SinglePartPartitionValueExtractor").
-  option("hoodie.datasource.hive_sync.mode", "hms").
-  option("hoodie.datasource.hive_sync.metastore.uris", "thrift://localhost:9083/").
+  option(TABLE_NAME, database).
+  option("hoodie.database.name", "test").
+  option("hoodie.metadata.enabled", "false").
+  option("hoodie.metaserver.enabled", "true").
+  option("hoodie.metaserver.enabled", "").
   mode(Overwrite).
   save(basePath)
 
